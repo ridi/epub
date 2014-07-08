@@ -90,12 +90,27 @@ class OpfResource
 
     private function processMetadataElement(SimpleXMLElement $xml, Metadata $metadata)
     {
+        if ($xml->count() === 0) {
+            return;
+        }
+
         foreach ($xml->children(NamespaceRegistry::NAMESPACE_DC) as $child) {
             $item = new MetadataItem();
 
             $item->name = $child->getName();
             $item->value = trim((string) $child);
             $item->attributes = $this->getXmlAttributes($child);
+
+            $metadata->add($item);
+        }
+
+        // Xml with no DC namespace.
+        foreach ($xml->children()->meta as $child) {
+            $item = new MetadataItem();
+
+            $item->name = (string) $child['name'];
+            $item->value = (string) $child['content'];
+            $item->attributes = array();
 
             $metadata->add($item);
         }
@@ -208,7 +223,15 @@ class OpfResource
             $resource = $this->resource;
 
             $item->setContent(function () use ($item, $resource) {
-                return $resource->get($item->href);
+                // Fallback: Some epubs have an url encoded path in their href attr.
+                $content = $resource->get($item->href);
+                if ($content === false) {
+                    $content = $resource->get(urldecode($item->href));
+                }
+                if ($content === false) {
+                    $content = $resource->get(iconv('utf-8', 'euc-kr', urldecode($item->href)));
+                }
+                return $content;
             });
         }
     }

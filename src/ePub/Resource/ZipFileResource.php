@@ -37,6 +37,13 @@ class ZipFileResource
             $name = $this->cwd . '/' . $name;
         }
 
+        // We do not support for opf namespaced xml so erase it in these cases.
+        $string = $this->zipFile->getFromName($name);
+        if (substr($name, -strlen('.opf')) === '.opf') {
+            $string = str_replace('<opf:', '<', $string);
+            $string = str_replace('</opf:', '</', $string);
+        }
+
         return $this->zipFile->getFromName($name);
     }
 

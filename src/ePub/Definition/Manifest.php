@@ -39,12 +39,6 @@ class Manifest extends Collection
 
         $href = $item->href;
 
-        if (isset($this->resources[$href])) {
-            throw new DuplicateItemException(
-                'A single resource (href) must not be listed in the manifest more than once'
-            );
-        }
-
         $this->resources[$href] = $item;
         $this->items[$id]       = $item;
     }
