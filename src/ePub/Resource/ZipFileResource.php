@@ -64,4 +64,9 @@ class ZipFileResource
 
         return $result;
     }
+
+    public function close()
+    {
+        $this->zipFile->close();
+    }
 }

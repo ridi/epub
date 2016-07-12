@@ -26,4 +26,9 @@ class Reader
     {
         return $this->loader->load($file);
     }
+
+    public function close()
+    {
+        $this->loader->close();
+    }
 }
