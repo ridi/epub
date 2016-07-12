@@ -21,6 +21,10 @@ use ePub\Definition\Metadata;
 class ZipFileLoader
 {
     /**
+     * @var ZipFileResource
+     */
+    private $resource;
+    /**
      * Reads in a ePub file and builds the Package definition
      *
      * @param string $file
@@ -29,9 +33,9 @@ class ZipFileLoader
      */
     public function load($file)
     {
-        $resource = new ZipFileResource($file);
+        $this->resource = new ZipFileResource($file);
 
-        $package = $resource->getXML('META-INF/container.xml');
+        $package = $this->resource ->getXML('META-INF/container.xml');
 
         if (!$opfFile = (string) $package->rootfiles->rootfile['full-path']) {
             $ns = $package->getNamespaces();
@@ -42,24 +46,31 @@ class ZipFileLoader
             }
         }
 
-        $data = $resource->get($opfFile);
+        $data = $this->resource ->get($opfFile);
 
         // all files referenced in the OPF are relative to it's directory
         if ('.' !== $dir = dirname($opfFile)) {
-            $resource->setDirectory($dir);
+            $this->resource ->setDirectory($dir);
         }
 
-        $opfResource = new OpfResource($data, $resource);
+        $opfResource = new OpfResource($data, $this->resource);
         $package = $opfResource->bind();
         
         $package->opfDirectory = dirname($opfFile);
         
         if ($package->navigation->src->href) {
-            $ncx = $resource->get($package->navigation->src->href);
+            $ncx = $this->resource->get($package->navigation->src->href);
             $ncxResource = new NcxResource($ncx);
             $package = $ncxResource->bind($package);
         }
         
         return $package;
+    }
+    
+    public function close()
+    {
+        if ($this->resource) {
+            $this->resource->close();
+        }
     }
 }
