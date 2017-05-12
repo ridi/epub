@@ -36,6 +36,9 @@ class ZipFileLoader
         $this->resource = new ZipFileResource($file);
 
         $package = $this->resource ->getXML('META-INF/container.xml');
+        if ($package === false) {
+            throw new FileException();
+        }
 
         if (!$opfFile = (string) $package->rootfiles->rootfile['full-path']) {
             $ns = $package->getNamespaces();
