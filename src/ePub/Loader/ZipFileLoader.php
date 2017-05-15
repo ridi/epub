@@ -11,6 +11,7 @@
 
 namespace ePub\Loader;
 
+use ePub\Exception\InvalidXmlException;
 use ePub\Resource\ZipFileResource;
 use ePub\Resource\OpfResource;
 use ePub\Resource\NcxResource;
@@ -24,12 +25,13 @@ class ZipFileLoader
      * @var ZipFileResource
      */
     private $resource;
+
     /**
      * Reads in a ePub file and builds the Package definition
      *
      * @param string $file
-     *
      * @return \ePub\Definition\Package
+     * @throws InvalidXmlException
      */
     public function load($file)
     {
@@ -37,7 +39,7 @@ class ZipFileLoader
 
         $package = $this->resource ->getXML('META-INF/container.xml');
         if ($package === false) {
-            throw new FileException();
+            throw new InvalidXmlException();
         }
 
         if (!$opfFile = (string) $package->rootfiles->rootfile['full-path']) {
