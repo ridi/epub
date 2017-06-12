@@ -64,6 +64,10 @@ class NcxResource
     
     private function consumeNavMap($navMap, &$chapters)
     {
+        if (is_null($navMap->navPoint)) {
+            return;
+        }
+
         foreach ($navMap->navPoint as $navPoint) {
             $chapters[] = $this->consumeNavPoint($navPoint);
         }
@@ -80,5 +84,4 @@ class NcxResource
         
         return $chapter;
     }
-    
 }
