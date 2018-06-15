@@ -12,8 +12,9 @@
 namespace ePub\Tests;
 
 use ePub\Reader;
+use PHPUnit\Framework\TestCase;
 
-abstract class BaseTest extends \PHPUnit_Framework_TestCase
+abstract class BaseTest extends TestCase
 {
     /**
      * Locate a test fixture file

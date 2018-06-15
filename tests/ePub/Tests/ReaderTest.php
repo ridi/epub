@@ -11,7 +11,6 @@
 
 namespace ePub\Tests;
 
-use ePub\Tests\BaseTest;
 use ePub\Reader;
 
 class ReaderTest extends BaseTest
