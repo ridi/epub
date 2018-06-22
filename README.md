@@ -1,15 +1,17 @@
-# ePub lib for PHP - ![project status](http://stillmaintained.com/justinrainbow/epub.png) - [![Build Status](https://secure.travis-ci.org/justinrainbow/epub.png)](http://travis-ci.org/justinrainbow/epub)
+# ePub lib for PHP
+
+[![Build Status](https://travis-ci.org/ridi/epub.svg?branch=master)](https://travis-ci.org/ridi/epub)
 
 ## Installation
 
 ### Composer (preferred)
 
-Add `justinrainbow/epub` to your `composer.json` file.
+Add `ridibooks/epub` to your `composer.json` file.
 
 ```javascript
 {
     "require": {
-        "justinrainbow/epub": "master-dev"
+        "ridibooks/epub": "dev-master"
     }
 }
 ```
@@ -28,7 +30,7 @@ Add the following to your `deps` file
 
 ```ini
 [epub]
-    git=http://github.com/justinrainbow/epub.git
+    git=http://github.com/ridi/epub.git
 ```
 
 After you have run the `bin/vendors install` script, add the following
