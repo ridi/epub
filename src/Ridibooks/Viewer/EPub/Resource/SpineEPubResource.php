@@ -109,7 +109,7 @@ class SpineEPubResource extends EPubResource
 
     public function flushContent()
     {
-        $this->content = json_encode(['value' => $this->stringifyDom()]);
+        $this->content = $this->stringifyDom();
     }
 
     public function getContent()
