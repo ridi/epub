@@ -237,20 +237,19 @@ class EPubResourceProcessor
                 if ($css_resource !== false) {
                     /* @var CssEPubResource $css_resource */
                     $css_resource->addNamespace($css_namespace);
-                    $parsed = $css_resource->parse();
-                    foreach ($parsed->getAllValues() as $value) {
-                        if ($value instanceof URL) {
-                            /** @var URL $value */
-                            $href = $value->getURL()->getString();
-                            $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
-                            $img_resource = $this->setResourceIsUsed(ImageEPubResource::TYPE, $compared_path);
-                            if ($img_resource !== false) {
-                                $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
+                    $css_resource->run(function ($parsed) use ($spine) {
+                        foreach ($parsed->getAllValues() as &$value) {
+                            if ($value instanceof URL) {
+                                /** @var URL $value */
+                                $href = $value->getURL()->getString();
+                                $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
+                                $img_resource = $this->setResourceIsUsed(ImageEPubResource::TYPE, $compared_path);
+                                if ($img_resource !== false) {
+                                    $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
+                                }
                             }
                         }
-                    }
-                    $css_resource->flushContent();
-                    $css_resource->clearParsed();
+                    });
                 }
             } else {
                 $manifest = new ManifestItem();

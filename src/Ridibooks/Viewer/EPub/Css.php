@@ -9,17 +9,31 @@ use Sabberworm\CSS\RuleSet\AtRuleSet;
 use Sabberworm\CSS\RuleSet\DeclarationBlock;
 use Sabberworm\CSS\Settings as CssSettings;
 
-class CssUtil
+class Css
 {
+    /** @var \Sabberworm\CSS\CSSList\Document */
+    private $parsed;
+
     /**
      * @param $css
      * @param int $size_limit
-     *      Due to bad performance of CSS parser, limiting size would be needed.
-     *      To unset limitation, set -1.
-     * @return \Sabberworm\CSS\CSSList\Document
+     * @return Css
      * @throws \Exception
      */
-    public static function parse($css, int $size_limit = 200 * 1024) {
+    public static function parse($css, int $size_limit = 200 * 1024)
+    {
+        return new Css($css, $size_limit);
+    }
+
+    /**
+     * Css constructor.
+     *
+     * @param string $css
+     * @param int $size_limit
+     * @throws \Exception
+     */
+    protected function __construct($css, int $size_limit)
+    {
         if ($size_limit > -1 && strlen($css) > $size_limit) {
             // 200KB 파일 처리시 Time: 1.3s, Memory: 16MB 정도의 리소스를 사용
             throw new \Exception("Too large CSS file ($size_limit bytes+)");
@@ -39,27 +53,22 @@ class CssUtil
         }
 
         $parser = new CssParser($css, CssSettings::create());
-        return $parser->parse();
+        $this->parsed = $parser->parse();
     }
 
     /**
-     * @param string $css
-     * @param int $size_limit
-     *      Due to bad performance of CSS parser, limiting size would be needed.
-     *      To unset limitation, set -1.
      * @param array $namespaces namespacing with all selectors in `$css` string
      * @return string
      * @throws \Exception
+     * @return $this
      */
-    public static function cleanUp($css, array $namespaces, int $size_limit = 200 * 1024)
+    public function cleanUp(array $namespaces)
     {
-        $parsed = static::parse($css, $size_limit);
-
-        foreach ($parsed->getAllRuleSets() as $rule_set) {
+        foreach ($this->parsed->getAllRuleSets() as $rule_set) {
             // @font-face 삭제
             if ($rule_set instanceof AtRuleSet) {
                 if ($rule_set->atRuleName() == 'font-face') {
-                    $parsed->remove($rule_set);
+                    $this->parsed->remove($rule_set);
                 }
             } elseif ($rule_set instanceof DeclarationBlock) {
                 /** @var Selector $selector */
@@ -81,24 +90,40 @@ class CssUtil
 
                 // Selector 중 유효한 것이 없다면 해당 block 자체를 제거한다
                 if (count($rule_set->getSelectors()) === 0) {
-                    $parsed->remove($rule_set);
+                    $this->parsed->remove($rule_set);
                 }
             }
         }
 
         // Remove @charset @import ...
-        foreach ($parsed->getContents() as $c) {
+        foreach ($this->parsed->getContents() as $c) {
             if ($c instanceof AtRule) {
                 /** @var AtRuleSet $c */
-                $parsed->remove($c);
+                $this->parsed->remove($c);
             }
         }
 
-        return $parsed->__toString();
+        $this->content = $this->parsed->__toString();
+        return $this;
     }
 
-    public static function minify($css)
+    /**
+     * @param $run_with_parsed
+     */
+    public function run($run_with_parsed)
     {
-        return \CssMin::minify($css);
+        $run_with_parsed($this->parsed);
+    }
+
+    /**
+     * @param bool $minify
+     * @return string
+     */
+    public function getContent($minify = false) {
+        $content = $this->parsed->__toString();
+        if ($minify) {
+            return \CssMin::minify($content);
+        }
+        return $content;
     }
 }
