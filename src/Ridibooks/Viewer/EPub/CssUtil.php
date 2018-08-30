@@ -12,30 +12,48 @@ use Sabberworm\CSS\Settings as CssSettings;
 class CssUtil
 {
     /**
-     * TODO CSS 파서 속도가 개선되었으므로, 테스트를 통해 CSS 용량 제한을 조절할 필요가 있음
-     * 200KB 파일 처리시 Time: 1.3s, Memory: 16MB 정도의 리소스를 사용
-     * @param string $css
-     * @param array $namespaces namespacing with all selectors in `$css` string
+     * @param $css
      * @param int $size_limit
      *      Due to bad performance of CSS parser, limiting size would be needed.
      *      To unset limitation, set -1.
+     * @return \Sabberworm\CSS\CSSList\Document
+     * @throws \Exception
+     */
+    public static function parse($css, int $size_limit = 200 * 1024) {
+        if ($size_limit > -1 && strlen($css) > $size_limit) {
+            // 200KB 파일 처리시 Time: 1.3s, Memory: 16MB 정도의 리소스를 사용
+            throw new \Exception("Too large CSS file ($size_limit bytes+)");
+        }
+        if (substr($css, 0, 3) == pack('CCC', 0xef, 0xbb, 0xbf)) {
+            // CSS 파일이 UTF8 BOM 으로 되어있는 경우 BOM을 제거
+            $css = substr($css, 3);
+        }
+        // 인라인 스타일이 CDATA나 comment로 감싸져 있을 경우 제거
+        $css = str_replace('<![CDATA[', '', $css);
+        $css = str_replace('<!--', '', $css);
+        $css = str_replace('-->', '', $css);
+        $css = str_replace(']]>', '', $css);
+        if (mb_detect_encoding($css, 'EUC-KR, UTF-8') == 'EUC-KR') {
+            // 인코딩이 utf-8이 아니면 특수한 경우 파서가 무한루프를 도는 현상이 있음
+            $css = mb_convert_encoding($css, 'UTF-8', 'EUC-KR');
+        }
+
+        $parser = new CssParser($css, CssSettings::create());
+        return $parser->parse();
+    }
+
+    /**
+     * @param string $css
+     * @param int $size_limit
+     *      Due to bad performance of CSS parser, limiting size would be needed.
+     *      To unset limitation, set -1.
+     * @param array $namespaces namespacing with all selectors in `$css` string
      * @return string
      * @throws \Exception
      */
     public static function cleanUp($css, array $namespaces, int $size_limit = 200 * 1024)
     {
-        if ($size_limit > -1 && strlen($css) > $size_limit) {
-            throw new \Exception("Too large CSS file ($size_limit bytes+)");
-        }
-        $conf = CssSettings::create();
-
-        // 인코딩이 utf-8이 아니면 특수한 경우 파서가 무한루프를 도는 현상이 있음
-        if (mb_detect_encoding($css, 'EUC-KR, UTF-8') == 'EUC-KR') {
-            $css = mb_convert_encoding($css, 'UTF-8', 'EUC-KR');
-        }
-
-        $parser = new CssParser($css, $conf);
-        $parsed = $parser->parse();
+        $parsed = static::parse($css, $size_limit);
 
         foreach ($parsed->getAllRuleSets() as $rule_set) {
             // @font-face 삭제

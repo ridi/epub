@@ -4,6 +4,8 @@ namespace Ridibooks\Viewer\EPub\Resource;
 
 use ePub\Definition\SpineItem;
 use Ridibooks\Viewer\EPub\Dom;
+use Ridibooks\Viewer\EPub\PathUtil;
+use simplehtmldom_1_5\simple_html_dom_node;
 
 class SpineEPubResource extends EPubResource
 {
@@ -20,29 +22,18 @@ class SpineEPubResource extends EPubResource
         $this->type = self::TYPE;
     }
 
-    private function parseHtml()
-    {
-        $html = $this->manifest->getContent();
-        $this->dom = Dom::parse($html);
-    }
-
-    private function stringifyDom(): string
-    {
-        return $this->getDom()->save('body', true);
-    }
-
     /**
      * @param array|boolean $allow_inline_styles
      */
     public function cleanUp($allow_inline_styles)
     {
         // 파일 인라인 스타일 제거
-        $this->getDom()->removeNode('head style');
+        $this->parse()->removeNode('head style');
         // 스크립트 태그 제거
-        $this->getDom()->removeNode('script');
+        $this->parse()->removeNode('script');
         // 태그 인라인 스타일 제거 (허용 스타일 제외)
         if ($allow_inline_styles !== true) {
-            $this->getDom()->each('*[style]', function ($node) use ($allow_inline_styles) {
+            $this->parse()->each('*[style]', function ($node) use ($allow_inline_styles) {
                 if (!$allow_inline_styles || empty($allow_inline_styles)) {
                     $node->style = '';
                 } else {
@@ -58,7 +49,7 @@ class SpineEPubResource extends EPubResource
             });
         }
         // 하이퍼링크 안전하게 변경
-        $this->getDom()->each('body a', function ($node) {
+        $this->parse()->each('body a', function ($node) {
             if (isset($node->href)) {
                 $parsed = parse_url($node->href);
                 if (isset($parsed['scheme']) || isset($parsed['host'])) {
@@ -81,10 +72,11 @@ class SpineEPubResource extends EPubResource
         });
     }
 
-    public function getDom(): Dom
+    public function parse(): Dom
     {
         if ($this->dom === null) {
-            $this->parseHtml();
+            $html = $this->manifest->getContent();
+            $this->dom = Dom::parse($html);
         }
         return $this->dom;
     }
@@ -109,7 +101,7 @@ class SpineEPubResource extends EPubResource
 
     public function flushContent()
     {
-        $this->content = $this->stringifyDom();
+        $this->content = $this->parse()->save('body', true);
     }
 
     public function getContent()
@@ -120,7 +112,7 @@ class SpineEPubResource extends EPubResource
     public function getLength()
     {
         if ($this->length === null) {
-            $this->length = mb_strlen($this->getDom()->find('body')[0]->plaintext, 'utf-8');
+            $this->length = mb_strlen($this->parse()->find('body')[0]->plaintext, 'utf-8');
             $this->clearDom();
         }
         return $this->length;
@@ -140,4 +132,5 @@ class SpineEPubResource extends EPubResource
     {
         return $this->isValid() && $this->is_used;
     }
+
 }

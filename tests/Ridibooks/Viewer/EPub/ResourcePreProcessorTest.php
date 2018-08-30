@@ -236,4 +236,25 @@ class ResourcePreProcessorTest extends TestCase
         $spines = $result->getAll(SpineEPubResource::TYPE, true);
         $this->assertContains($filename, $spines['Text/Section0001.xhtml']->getContent());
     }
+
+    public function testUrlInStyleSheetFile()
+    {
+        $epub = $this->loadResource('css_include_url.epub');
+
+        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
+            EPubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+            EPubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
+        ]);
+        $result = $resource_manager->run();
+
+        $image_filenames = array_map(
+            function ($image) { return $image->getFilename(); },
+            $result->getAll(ImageEPubResource::TYPE, true)
+        );
+        foreach ($result->getAll(CssEPubResource::TYPE, true) as $css) {
+            $content = $css->getContent();
+            $this->assertMatchesSnapshot($content);
+            $this->assertContains($image_filenames['Images/background.jpg'], $content);
+        }
+    }
 }

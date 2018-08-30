@@ -13,6 +13,8 @@ class CssEPubResource extends EPubResource
     /** @var array 한 페이지에 여러 Spine이 충돌 없이 존재할 수 있도록 하기 위해 네임스페이스 관리 */
     private $namespaces = [];
     private $style_size_limit;
+    private $parsed;
+    private $content;
 
     public function __construct(ManifestItem $manifest, int $style_size_limit)
     {
@@ -26,6 +28,35 @@ class CssEPubResource extends EPubResource
         return basename($this->getHref());
     }
 
+    public function getContentInternal()
+    {
+        if ($this->content === null) {
+            $this->content = $this->manifest->getContent();
+        }
+        return $this->content;
+    }
+
+    public function parse()
+    {
+        if ($this->parsed === null) {
+            if ($this->getContentInternal() === false) {
+                throw new \Exception('Cannot open css resource: ' . $this->getHref());
+            }
+            $this->parsed = CssUtil::parse($this->getContentInternal(), $this->style_size_limit);
+        }
+        return $this->parsed;
+    }
+
+    public function clearParsed()
+    {
+        $this->parsed = null;
+    }
+
+    public function flushContent()
+    {
+        $this->content = $this->parse()->__toString();
+    }
+
     /**
      * @return mixed|string
      * @throws CssResourceException
@@ -33,22 +64,7 @@ class CssEPubResource extends EPubResource
     public function getContent()
     {
         try {
-            $css = $this->manifest->getContent();
-            if ($css === false) {
-                throw new \Exception('Cannot open css resource: ' . $this->getHref());
-            }
-            // CSS 파일이 UTF8 BOM 으로 되어있는 경우 BOM을 제거
-            if (substr($css, 0, 3) == pack('CCC', 0xef, 0xbb, 0xbf)) {
-                $css = substr($css, 3);
-            }
-
-            // 인라인 스타일이 CDATA나 comment로 감싸져 있을 경우 제거
-            $css = str_replace('<![CDATA[', '', $css);
-            $css = str_replace('<!--', '', $css);
-            $css = str_replace('-->', '', $css);
-            $css = str_replace(']]>', '', $css);
-
-            return CssUtil::minify(CssUtil::cleanUp($css, $this->namespaces, $this->style_size_limit));
+            return CssUtil::minify(CssUtil::cleanUp($this->getContentInternal(), $this->namespaces, $this->style_size_limit));
         } catch (\Exception $e) {
             throw new CssResourceException($e->getMessage());
         }
