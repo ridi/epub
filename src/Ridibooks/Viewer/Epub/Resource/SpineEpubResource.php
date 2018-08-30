@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub\Resource;
+namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\SpineItem;
-use Ridibooks\Viewer\EPub\Dom;
-use Ridibooks\Viewer\EPub\PathUtil;
+use Ridibooks\Viewer\Epub\Dom;
+use Ridibooks\Viewer\Epub\PathUtil;
 use simplehtmldom_1_5\simple_html_dom_node;
 
-class SpineEPubResource extends EPubResource
+class SpineEpubResource extends EpubResource
 {
     const TYPE = 'html';
     /** @var Dom */

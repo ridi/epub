@@ -5,7 +5,7 @@ namespace Ridibooks\Tests\Viewer\WebViewer;
 
 
 use PHPUnit\Framework\TestCase;
-use Ridibooks\Viewer\EPub\Dom;
+use Ridibooks\Viewer\Epub\Dom;
 use Spatie\Snapshots\MatchesSnapshots;
 
 class DomTest extends TestCase

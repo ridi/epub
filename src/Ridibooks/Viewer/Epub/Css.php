@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub;
+namespace Ridibooks\Viewer\Epub;
 
 use Sabberworm\CSS\Parser as CssParser;
 use Sabberworm\CSS\Property\AtRule;

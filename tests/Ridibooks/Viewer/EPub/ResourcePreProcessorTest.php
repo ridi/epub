@@ -4,12 +4,12 @@ namespace Ridibooks\Tests\Viewer\EPub;
 
 use ePub\Reader;
 use PHPUnit\Framework\TestCase;
-use Ridibooks\Viewer\EPub\Exception\EPubFileException;
-use Ridibooks\Viewer\EPub\Resource\CssEPubResource;
-use Ridibooks\Viewer\EPub\Resource\ImageEPubResource;
-use Ridibooks\Viewer\EPub\Resource\NavEPubResource;
-use Ridibooks\Viewer\EPub\Resource\SpineEPubResource;
-use Ridibooks\Viewer\EPub\EPubResourceProcessor;
+use Ridibooks\Viewer\Epub\Exception\EpubFileException;
+use Ridibooks\Viewer\Epub\Resource\CssEpubResource;
+use Ridibooks\Viewer\Epub\Resource\ImageEpubResource;
+use Ridibooks\Viewer\Epub\Resource\NavEpubResource;
+use Ridibooks\Viewer\Epub\Resource\SpineEpubResource;
+use Ridibooks\Viewer\Epub\EpubResourceProcessor;
 use Spatie\Snapshots\MatchesSnapshots;
 
 class ResourcePreProcessorTest extends TestCase
@@ -46,10 +46,10 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('single_spine.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub);
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
     }
@@ -58,10 +58,10 @@ class ResourcePreProcessorTest extends TestCase
     {
         $file = $this->getFilePath('single_spine.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromFile($file);
+        $resource_manager = EpubResourceProcessor::createFromFile($file);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
     }
@@ -70,10 +70,10 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub);
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
     }
@@ -82,30 +82,30 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_TRUNCATE => 5,
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_TRUNCATE => 5,
         ]);
 
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
-        $this->assertEquals(9, count($result->getAll(ImageEPubResource::TYPE, true)));
+        $this->assertEquals(9, count($result->getAll(ImageEpubResource::TYPE, true)));
     }
 
     public function testIncludeCssOption()
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_TRUNCATE => 10,
-            EPubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_TRUNCATE => 10,
+            EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
         ]);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(CssEPubResource::TYPE, true) as $css) {
+        foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
             $this->assertMatchesSnapshot($css->getContent());
         }
     }
@@ -114,13 +114,13 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_TRUNCATE => 0.5,
-            EPubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_TRUNCATE => 0.5,
+            EpubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
         ]);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
     }
@@ -129,15 +129,15 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_TRUNCATE => 0.5,
-            EPubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_CSS_NAMESPACE_PREFIX => '.test_class_c',
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_TRUNCATE => 0.5,
+            EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_CSS_NAMESPACE_PREFIX => '.test_class_c',
         ]);
         $result = $resource_manager->run();
 
-        foreach ($result->getAll(CssEPubResource::TYPE, true) as $css) {
+        foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
             $this->assertMatchesSnapshot($css->getContent());
         }
     }
@@ -146,8 +146,8 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_SPINE_VALIDATOR => function ($manifest, $is_last) {
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_SPINE_VALIDATOR => function ($manifest, $is_last) {
                 return !in_array($manifest->id, [
                     'coverpage-wrapper',
                     'item170',
@@ -158,28 +158,28 @@ class ResourcePreProcessorTest extends TestCase
             },
         ]);
         $result = $resource_manager->run();
-        $this->assertEquals(8, count($result->getAll(SpineEPubResource::TYPE, true)));
+        $this->assertEquals(8, count($result->getAll(SpineEpubResource::TYPE, true)));
         $this->assertMatchesSnapshot(array_map(function ($nav) {
             return $nav->getContent();
-        }, $result->getAll(NavEPubResource::TYPE, false)));
+        }, $result->getAll(NavEpubResource::TYPE, false)));
     }
 
     public function testAllowedStyles()
     {
         $epub = $this->loadResource('include_styles.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_ALLOW_INLINE_STYLE => [
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_ALLOW_INLINE_STYLE => [
               'text-align' => 'center',
             ],
         ]);
         $result = $resource_manager->run();
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
-        foreach ($result->getAll(CssEPubResource::TYPE, true) as $css) {
+        foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
             $this->assertMatchesSnapshot($css->getContent());
         }
     }
@@ -188,13 +188,13 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_INCLUDE_NAV => true
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_INCLUDE_NAV => true
         ]);
         $result = $resource_manager->run();
         $toc = array_map(function ($chapter) {
             return $chapter->getContent();
-        }, $result->getAll(NavEPubResource::TYPE));
+        }, $result->getAll(NavEpubResource::TYPE));
         $this->assertMatchesSnapshot($toc);
     }
 
@@ -202,38 +202,38 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_INCLUDE_NAV => true,
-            EPubResourceProcessor::OPTION_TRUNCATE => 10,
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_INCLUDE_NAV => true,
+            EpubResourceProcessor::OPTION_TRUNCATE => 10,
         ]);
         $result = $resource_manager->run();
 
         $toc = array_map(function ($chapter) {
             return $chapter->getContent();
-        }, $result->getAll(NavEPubResource::TYPE));
+        }, $result->getAll(NavEpubResource::TYPE));
         $this->assertMatchesSnapshot($toc);
 
-        foreach ($result->getAll(SpineEPubResource::TYPE, true) as $spine) {
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
             $this->assertMatchesSnapshot($spine->getContent());
         }
     }
 
     public function testWithNonExistFile()
     {
-        $this->expectException(EPubFileException::class);
-        EPubResourceProcessor::createFromFile('nowhere_file');
+        $this->expectException(EpubFileException::class);
+        EpubResourceProcessor::createFromFile('nowhere_file');
     }
 
     public function testUrlEncodedResourceHref()
     {
         $epub = $this->loadResource('resource_href_in_korean.epub');
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub);
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub);
         $result = $resource_manager->run();
 
-        $imgs = $result->getAll(ImageEPubResource::TYPE, true);
+        $imgs = $result->getAll(ImageEpubResource::TYPE, true);
         $filename = $imgs['Images/%EB%8F%84%EC%84%9C+%EC%9D%B4%EB%AF%B8%EC%A7%80.jpg']->getFilename();
 
-        $spines = $result->getAll(SpineEPubResource::TYPE, true);
+        $spines = $result->getAll(SpineEpubResource::TYPE, true);
         $this->assertContains($filename, $spines['Text/Section0001.xhtml']->getContent());
     }
 
@@ -241,17 +241,17 @@ class ResourcePreProcessorTest extends TestCase
     {
         $epub = $this->loadResource('css_include_url.epub');
 
-        $resource_manager = EPubResourceProcessor::createFromEPub($epub, [
-            EPubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
-            EPubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+            EpubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
         ]);
         $result = $resource_manager->run();
 
         $image_filenames = array_map(
             function ($image) { return $image->getFilename(); },
-            $result->getAll(ImageEPubResource::TYPE, true)
+            $result->getAll(ImageEpubResource::TYPE, true)
         );
-        foreach ($result->getAll(CssEPubResource::TYPE, true) as $css) {
+        foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
             $content = $css->getContent();
             $this->assertMatchesSnapshot($content);
             $this->assertContains($image_filenames['Images/background.jpg'], $content);

@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub\Resource;
+namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\ManifestItem;
 
-class ImageEPubResource extends EPubResource
+class ImageEpubResource extends EpubResource
 {
     const TYPE = 'image';
     public $is_cover = false;

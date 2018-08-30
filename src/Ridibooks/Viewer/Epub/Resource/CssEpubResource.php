@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub\Resource;
+namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\ManifestItem;
-use Ridibooks\Viewer\EPub\Css;
-use Ridibooks\Viewer\EPub\Exception\CssResourceException;
+use Ridibooks\Viewer\Epub\Css;
+use Ridibooks\Viewer\Epub\Exception\CssResourceException;
 
-class CssEPubResource extends EPubResource
+class CssEpubResource extends EpubResource
 {
     const TYPE = 'css';
 

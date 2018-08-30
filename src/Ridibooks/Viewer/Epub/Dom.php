@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub;
+namespace Ridibooks\Viewer\Epub;
 
 use simplehtmldom_1_5\simple_html_dom;
 use simplehtmldom_1_5\simple_html_dom_node;

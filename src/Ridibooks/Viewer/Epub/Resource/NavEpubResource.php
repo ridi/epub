@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub\Resource;
+namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\Chapter;
 
-class NavEPubResource extends EPubResource
+class NavEpubResource extends EpubResource
 {
     const TYPE = 'nav';
 
