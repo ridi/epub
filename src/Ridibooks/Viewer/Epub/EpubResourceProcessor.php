@@ -252,28 +252,25 @@ class EpubResourceProcessor
             if (!$spine->isValid()) {
                 continue;
             }
-            // 1. Get DOM
-            $dom = $spine->getParsedDom();
-            // 2. Set is_used flag
-            $spine->setIsUsed();
-            // 3. Truncate (if needed)
-            if ($this->use_truncate) {
-                $remain_length -= $spine->getLength();
-                if ($remain_length <= 0) {
-                    $stop = true;
-                    if ($remain_length < 0) {
-                        $dom->truncate($spine->getLength() + $remain_length);
+
+            $spine->run(function ($dom) use ($spine, &$remain_length, &$stop) {
+                // 1. Set is_used flag
+                $spine->setIsUsed();
+                // 2. Truncate (if needed)
+                if ($this->use_truncate) {
+                    $remain_length -= $spine->getLength();
+                    if ($remain_length <= 0) {
+                        $stop = true;
+                        if ($remain_length < 0) {
+                            $dom->truncate($spine->getLength() + $remain_length);
+                        }
                     }
                 }
-            }
-            // 4. Modify DOM with used resources
-            $this->mergeSpineWithResources($spine, $dom);
-            // 5. Clean up DOM (style, script)
-            $spine->cleanUp($this->options[self::OPTION_ALLOW_INLINE_STYLE]);
-            // 6. Save HTML content
-            $spine->flushContent();
-            // 7. Clear DOM
-            $spine->clearDom();
+                // 3. Modify DOM with used resources
+                $this->mergeSpineWithResources($spine, $dom);
+                // 4. Clean up DOM (style, script)
+                $dom->cleanUp($this->options[self::OPTION_ALLOW_INLINE_STYLE]);
+            });
 
             if ($stop) {
                 break;

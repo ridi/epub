@@ -20,70 +20,21 @@ class SpineEpubResource extends EpubResource
         $this->type = self::TYPE;
     }
 
-    /**
-     * @param array|boolean $allow_inline_styles
-     */
-    public function cleanUp($allow_inline_styles)
+    private function getParsedDom(): Dom
     {
-        // 파일 인라인 스타일 제거
-        $this->getParsedDom()->removeNode('head style');
-        // 스크립트 태그 제거
-        $this->getParsedDom()->removeNode('script');
-        // 태그 인라인 스타일 제거 (허용 스타일 제외)
-        if ($allow_inline_styles !== true) {
-            $this->getParsedDom()->each('*[style]', function ($node) use ($allow_inline_styles) {
-                if (!$allow_inline_styles || empty($allow_inline_styles)) {
-                    $node->style = '';
-                } else {
-                    $allowed = [];
-                    array_walk($allow_inline_styles, function ($v, $k) use ($node, &$allowed) {
-                        preg_match("/(${k}\s*:\s*${v})/i", $node->style, $matches);
-                        if (isset($matches[1])) {
-                            $allowed[] = $matches[1];
-                        }
-                    });
-                    $node->style = implode(';', $allowed);
-                }
-            });
-        }
-        // 하이퍼링크 안전하게 변경
-        $this->getParsedDom()->each('body a', function ($node) {
-            if (isset($node->href)) {
-                $parsed = parse_url($node->href);
-                if (isset($parsed['scheme']) || isset($parsed['host'])) {
-                    // Absolute 링크일경우 Blank 속성 추가
-                    $node->target = '_blank';
-                } else {
-                    // Relative 링크일 경우 plain text로 변환
-                    // TODO 각주 기능 구현, $parsed['fragment']를 사용하면 # 이후의 값을 가져올 수 있음
-                    $node->outertext = '<a>' . $node->innertext . '</a>';
-                }
-            }
-        });
-        // XHTML 규격에 맞지 않는 ruby 태그 표현 예외 처리 (일반 텍스트를 <rb></rb>로 감싸준다)
-        $this->getParsedDom()->each('ruby', function ($ruby) {
-            foreach ($ruby->nodes as $node) {
-                if ($node->tag === 'text') {
-                    $node->outertext = '<rb>' . $node->innertext . '</rb>';
-                }
-            }
-        });
-    }
-
-    public function getParsedDom(): Dom
-    {
-        if ($this->dom === null) {
+        if (!isset($this->dom)) {
             $html = $this->manifest->getContent();
             $this->dom = Dom::parse($html);
         }
         return $this->dom;
     }
 
-    public function clearDom()
+    private function flushParsedDom()
     {
-        if ($this->dom !== null) {
+        if (isset($this->dom)) {
+            $this->content = $this->dom->save('body', true);
             $this->dom->clear();
-            $this->dom = null;
+            unset($this->dom);
         }
     }
 
@@ -97,21 +48,11 @@ class SpineEpubResource extends EpubResource
         return sha1($this->getHref()) . '.json';
     }
 
-    public function flushContent()
-    {
-        $this->content = $this->getParsedDom()->save('body', true);
-    }
-
-    public function getContent()
-    {
-        return $this->content;
-    }
-
     public function getLength()
     {
         if ($this->length === null) {
             $this->length = mb_strlen($this->getParsedDom()->find('body')[0]->plaintext, 'utf-8');
-            $this->clearDom();
+            $this->flushParsedDom();
         }
         return $this->length;
     }
@@ -131,4 +72,18 @@ class SpineEpubResource extends EpubResource
         return $this->isValid() && $this->is_used;
     }
 
+    /**
+     * @param callable $run_with_parsed
+     * @throws \Exception
+     */
+    public function run(callable $run_with_parsed)
+    {
+        $run_with_parsed($this->getParsedDom());
+        $this->flushParsedDom();
+    }
+
+    public function getContent()
+    {
+        return $this->content;
+    }
 }
