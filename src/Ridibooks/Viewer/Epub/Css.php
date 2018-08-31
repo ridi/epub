@@ -8,6 +8,7 @@ use Sabberworm\CSS\Property\Selector;
 use Sabberworm\CSS\RuleSet\AtRuleSet;
 use Sabberworm\CSS\RuleSet\DeclarationBlock;
 use Sabberworm\CSS\Settings as CssSettings;
+use Sabberworm\CSS\Value\URL;
 
 class Css
 {
@@ -58,7 +59,6 @@ class Css
 
     /**
      * @param array $namespaces namespacing with all selectors in `$css` string
-     * @return string
      * @throws \Exception
      * @return $this
      */
@@ -103,27 +103,25 @@ class Css
             }
         }
 
-        $this->content = $this->parsed->__toString();
+        $this->parsed->__toString();
         return $this;
-    }
-
-    /**
-     * @param $run_with_parsed
-     */
-    public function run($run_with_parsed)
-    {
-        $run_with_parsed($this->parsed);
     }
 
     /**
      * @param bool $minify
      * @return string
      */
-    public function getContent($minify = false) {
+    public function getContent($minify = false)
+    {
         $content = $this->parsed->__toString();
         if ($minify) {
             return \CssMin::minify($content);
         }
         return $content;
+    }
+
+    public function getAllUrlValues()
+    {
+        return array_filter($this->parsed->getAllValues(), function ($value) { return $value instanceof URL; });
     }
 }

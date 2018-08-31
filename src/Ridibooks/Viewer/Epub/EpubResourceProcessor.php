@@ -97,41 +97,6 @@ class EpubResourceProcessor
         }
     }
 
-    /**
-     * Normalize a file path even if it is not exist
-     * For comparing paths in resource's manifest with link in tags(e.g. <img src="..."> or <link href="..."> )in spine xhtml
-     *
-     * NOTE: `realpath()` doesn't work with nonexist file.
-     * example) Text/../Images/image.jpg -> Images/image.jpg
-     *
-     * @see https://gist.github.com/thsutton/772287
-     * @see http://php.net/manual/en/function.empty.php#refsect1-function.empty-returnvalues
-     * @param $path
-     * @return string
-     */
-    private static function normalizePath(string $path): string
-    {
-        // Process the components
-        $parts = explode('/', $path);
-        $safe = [];
-        foreach ($parts as $idx => $part) {
-            if ('.' == $part) {
-                continue;
-            } elseif (empty($part) && !is_numeric($part)) {
-                continue;
-            } elseif ('..' == $part) {
-                array_pop($safe);
-                continue;
-            } else {
-                $safe[] = urlencode(urldecode($part));
-            }
-        }
-        // Return the "clean" path
-        $path = implode('/', $safe);
-
-        return $path;
-    }
-
     private function gatherResources()
     {
         // Images or Styles
@@ -242,16 +207,15 @@ class EpubResourceProcessor
                 if ($css_resource !== false) {
                     /* @var CssEpubResource $css_resource */
                     $css_resource->addNamespace($css_namespace);
-                    $css_resource->run(function ($parsed) use ($spine) {
-                        foreach ($parsed->getAllValues() as &$value) {
-                            if ($value instanceof URL) {
-                                /** @var URL $value */
-                                $href = $value->getURL()->getString();
-                                $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
-                                $img_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
-                                if ($img_resource !== false) {
-                                    $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
-                                }
+                    $css_resource->run(function ($parsedCss) use ($spine) {
+                        /** @var Css $parsedCss */
+                        /** @var URL $value */
+                        foreach ($parsedCss->getAllUrlValues() as &$value) {
+                            $href = $value->getURL()->getString();
+                            $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
+                            $img_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
+                            if ($img_resource !== false) {
+                                $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
                             }
                         }
                     });
@@ -289,7 +253,7 @@ class EpubResourceProcessor
                 continue;
             }
             // 1. Get DOM
-            $dom = $spine->parse();
+            $dom = $spine->getParsedDom();
             // 2. Set is_used flag
             $spine->setIsUsed();
             // 3. Truncate (if needed)

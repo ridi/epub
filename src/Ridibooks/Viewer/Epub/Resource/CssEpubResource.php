@@ -15,7 +15,7 @@ class CssEpubResource extends EpubResource
     private $style_size_limit;
     private $content;
     /** @var Css */
-    private $css;
+    private $parsed;
 
     public function __construct(ManifestItem $manifest, int $style_size_limit)
     {
@@ -24,23 +24,30 @@ class CssEpubResource extends EpubResource
         $this->style_size_limit = $style_size_limit;
     }
 
-    private function getContentInternal()
+    private function getContentFromManifest()
     {
-        if ($this->content === null) {
+        if (!isset($this->content)) {
             $this->content = $this->manifest->getContent();
         }
         return $this->content;
     }
 
-    private function parseCss()
+    private function getParsedCss()
     {
-        if ($this->css === null) {
-            if ($this->getContentInternal() === false) {
+        if (!isset($this->parsed)) {
+            $content = $this->getContentFromManifest();
+            if ($content === false) {
                 throw new \Exception('Cannot open css resource: ' . $this->getHref());
             }
-            $this->css = Css::parse($this->getContentInternal(), $this->style_size_limit);
+            $this->parsed = Css::parse($content, $this->style_size_limit);
         }
-        return $this->css;
+        return $this->parsed;
+    }
+
+    private function flushParsedCss()
+    {
+        $this->content = $this->parsed->getContent();
+        unset($this->parsed);
     }
 
     public function getFilename(): string
@@ -48,28 +55,35 @@ class CssEpubResource extends EpubResource
         return basename($this->getHref());
     }
 
-    public function run($run_with_parsed)
+    public function addNamespace(string $namespace)
     {
-        $this->parseCss();
-        $this->css->run($run_with_parsed);
+        $this->namespaces[] = $namespace;
     }
 
     /**
-     * @return mixed|string
+     * @param callable $run_with_parsed
+     * @throws \Exception
+     */
+    public function run(callable $run_with_parsed)
+    {
+        $run_with_parsed($this->getParsedCss());
+        $this->flushParsedCss();
+    }
+
+    /**
+     * @return string
      * @throws CssResourceException
      */
     public function getContent()
     {
         try {
-            $this->parseCss();
-            return $this->css->cleanUp($this->namespaces)->getContent(true);
+            return $this->getParsedCss()
+                ->cleanUp($this->namespaces)
+                ->getContent(true);
         } catch (\Exception $e) {
             throw new CssResourceException($e->getMessage());
+        } finally {
+            $this->flushParsedCss();
         }
-    }
-
-    public function addNamespace($namespace)
-    {
-        $this->namespaces[] = $namespace;
     }
 }

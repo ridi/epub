@@ -4,8 +4,6 @@ namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\SpineItem;
 use Ridibooks\Viewer\Epub\Dom;
-use Ridibooks\Viewer\Epub\PathUtil;
-use simplehtmldom_1_5\simple_html_dom_node;
 
 class SpineEpubResource extends EpubResource
 {
@@ -28,12 +26,12 @@ class SpineEpubResource extends EpubResource
     public function cleanUp($allow_inline_styles)
     {
         // 파일 인라인 스타일 제거
-        $this->parse()->removeNode('head style');
+        $this->getParsedDom()->removeNode('head style');
         // 스크립트 태그 제거
-        $this->parse()->removeNode('script');
+        $this->getParsedDom()->removeNode('script');
         // 태그 인라인 스타일 제거 (허용 스타일 제외)
         if ($allow_inline_styles !== true) {
-            $this->parse()->each('*[style]', function ($node) use ($allow_inline_styles) {
+            $this->getParsedDom()->each('*[style]', function ($node) use ($allow_inline_styles) {
                 if (!$allow_inline_styles || empty($allow_inline_styles)) {
                     $node->style = '';
                 } else {
@@ -49,7 +47,7 @@ class SpineEpubResource extends EpubResource
             });
         }
         // 하이퍼링크 안전하게 변경
-        $this->parse()->each('body a', function ($node) {
+        $this->getParsedDom()->each('body a', function ($node) {
             if (isset($node->href)) {
                 $parsed = parse_url($node->href);
                 if (isset($parsed['scheme']) || isset($parsed['host'])) {
@@ -63,7 +61,7 @@ class SpineEpubResource extends EpubResource
             }
         });
         // XHTML 규격에 맞지 않는 ruby 태그 표현 예외 처리 (일반 텍스트를 <rb></rb>로 감싸준다)
-        $this->dom->each('ruby', function ($ruby) {
+        $this->getParsedDom()->each('ruby', function ($ruby) {
             foreach ($ruby->nodes as $node) {
                 if ($node->tag === 'text') {
                     $node->outertext = '<rb>' . $node->innertext . '</rb>';
@@ -72,7 +70,7 @@ class SpineEpubResource extends EpubResource
         });
     }
 
-    public function parse(): Dom
+    public function getParsedDom(): Dom
     {
         if ($this->dom === null) {
             $html = $this->manifest->getContent();
@@ -101,7 +99,7 @@ class SpineEpubResource extends EpubResource
 
     public function flushContent()
     {
-        $this->content = $this->parse()->save('body', true);
+        $this->content = $this->getParsedDom()->save('body', true);
     }
 
     public function getContent()
@@ -112,7 +110,7 @@ class SpineEpubResource extends EpubResource
     public function getLength()
     {
         if ($this->length === null) {
-            $this->length = mb_strlen($this->parse()->find('body')[0]->plaintext, 'utf-8');
+            $this->length = mb_strlen($this->getParsedDom()->find('body')[0]->plaintext, 'utf-8');
             $this->clearDom();
         }
         return $this->length;
