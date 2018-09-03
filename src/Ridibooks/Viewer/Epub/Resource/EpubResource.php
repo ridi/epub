@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub\Resource;
+namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\Chapter;
 use ePub\Definition\ManifestItem;
 use ePub\Definition\SpineItem;
 
-abstract class EPubResource
+abstract class EpubResource
 {
     protected $type;
     protected $manifest;

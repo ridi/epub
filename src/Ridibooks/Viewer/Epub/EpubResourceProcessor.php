@@ -1,21 +1,23 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub;
+namespace Ridibooks\Viewer\Epub;
 
 use ePub\Definition\Chapter;
 use ePub\Definition\ManifestItem;
 use ePub\Definition\Package;
 use ePub\Definition\SpineItem;
 use ePub\Reader;
-use Ridibooks\Viewer\EPub\Exception\EPubFileException;
-use Ridibooks\Viewer\EPub\Exception\EPubResourceException;
-use Ridibooks\Viewer\EPub\Resource\CssEPubResource;
-use Ridibooks\Viewer\EPub\Resource\ImageEPubResource;
-use Ridibooks\Viewer\EPub\Resource\NavEPubResource;
-use Ridibooks\Viewer\EPub\Resource\SpineEPubResource;
+use Ridibooks\Viewer\Epub\Exception\EpubFileException;
+use Ridibooks\Viewer\Epub\Exception\EpubResourceException;
+use Ridibooks\Viewer\Epub\Resource\CssEpubResource;
+use Ridibooks\Viewer\Epub\Resource\ImageEpubResource;
+use Ridibooks\Viewer\Epub\Resource\NavEpubResource;
+use Ridibooks\Viewer\Epub\Resource\SpineEpubResource;
+use Sabberworm\CSS\Value\CSSString;
+use Sabberworm\CSS\Value\URL;
 use simplehtmldom_1_5\simple_html_dom_node;
 
-class EPubResourceProcessor
+class EpubResourceProcessor
 {
     const OPTION_TRUNCATE = 'truncate';
     const OPTION_TRUNCATE_MAX_LENGTH = 'truncate_max_length';
@@ -49,10 +51,15 @@ class EPubResourceProcessor
             self::OPTION_INCLUDE_NAV => false,
             self::OPTION_STYLE_SIZE_LIMIT => 200 * 1024,
         ], $options);
-        $this->result = new EPubResourceProcessResult();
+        $this->result = new EpubResourceProcessResult();
     }
 
-    public static function createFromEPub(Package $epub, array $options = []): self
+    /**
+     * @param Package $epub
+     * @param array $options
+     * @return EpubResourceProcessor
+     */
+    public static function createFromEpub(Package $epub, array $options = []): self
     {
         return new self($epub, $options);
     }
@@ -60,24 +67,24 @@ class EPubResourceProcessor
     /**
      * @param string $file_path
      * @param array $options
-     * @return EPubResourceProcessor
-     * @throws EPubFileException
-     * @throws EPubResourceException
+     * @return EpubResourceProcessor
+     * @throws EpubFileException
+     * @throws EpubResourceException
      */
     public static function createFromFile(string $file_path, array $options = []): self
     {
         if (!is_readable($file_path)) {
-            throw new EPubFileException('Cannot open ePub file: ' . $file_path);
+            throw new EpubFileException('Cannot open ePub file: ' . $file_path);
         }
         if (filesize($file_path) == 0) {
-            throw new EPubFileException('Zero file size: ' . $file_path);
+            throw new EpubFileException('Zero file size: ' . $file_path);
         }
 
         // EPub 라이브러리에서 ZIP 오픈시 예외처리가 되어있지 않아 (Exception도 던지지 않음) 올바른 ZIP 파일인지 먼저 체크
         $zip = new \ZipArchive();
         $res = $zip->open($file_path);
         if ($res !== true) {
-            throw new EPubResourceException('Invalid ZIP file: ' . $res);
+            throw new EpubResourceException('Invalid ZIP file: ' . $res);
         }
         $zip->close();
 
@@ -86,43 +93,8 @@ class EPubResourceProcessor
             $epub = $reader->load($file_path);
             return new self($epub, $options);
         } catch (\Exception $e) {
-            throw new EPubResourceException("Invalid ePub file: " . $file_path, 0, $e);
+            throw new EpubResourceException("Invalid ePub file: " . $file_path, 0, $e);
         }
-    }
-
-    /**
-     * Normalize a file path even if it is not exist
-     * For comparing paths in resource's manifest with link in tags(e.g. <img src="..."> or <link href="..."> )in spine xhtml
-     *
-     * NOTE: `realpath()` doesn't work with nonexist file.
-     * example) Text/../Images/image.jpg -> Images/image.jpg
-     *
-     * @see https://gist.github.com/thsutton/772287
-     * @see http://php.net/manual/en/function.empty.php#refsect1-function.empty-returnvalues
-     * @param $path
-     * @return string
-     */
-    private static function normalizePath(string $path): string
-    {
-        // Process the components
-        $parts = explode('/', $path);
-        $safe = [];
-        foreach ($parts as $idx => $part) {
-            if ('.' == $part) {
-                continue;
-            } elseif (empty($part) && !is_numeric($part)) {
-                continue;
-            } elseif ('..' == $part) {
-                array_pop($safe);
-                continue;
-            } else {
-                $safe[] = urlencode(urldecode($part));
-            }
-        }
-        // Return the "clean" path
-        $path = implode('/', $safe);
-
-        return $path;
     }
 
     private function gatherResources()
@@ -132,9 +104,9 @@ class EPubResourceProcessor
         foreach ($this->epub->getManifest()->all() as $manifest) {
             if (strpos($manifest->type, 'image/') !== false) {
                 $coverId = $this->epub->metadata->has('cover') ? $this->epub->metadata->getValue('cover') : null;
-                $this->result->add(new ImageEPubResource($manifest, $manifest->getIdentifier() === $coverId));
+                $this->result->add(new ImageEpubResource($manifest, $manifest->getIdentifier() === $coverId));
             } elseif (strpos($manifest->type, 'text/css') !== false) {
-                $this->result->add(new CssEPubResource($manifest, $this->options[self::OPTION_STYLE_SIZE_LIMIT]));
+                $this->result->add(new CssEpubResource($manifest, $this->options[self::OPTION_STYLE_SIZE_LIMIT]));
             }
         }
     }
@@ -153,8 +125,8 @@ class EPubResourceProcessor
 
         /** @var SpineItem $manifest */
         foreach ($spines as $manifest) {
-            /** @var SpineEPubResource $spine */
-            $spine = new SpineEPubResource($manifest);
+            /** @var SpineEpubResource $spine */
+            $spine = new SpineEpubResource($manifest);
 
             // Validation
             $spine->setIsValid($validator === null || $validator($manifest, $manifest == $last_spine));
@@ -173,7 +145,7 @@ class EPubResourceProcessor
     {
         /** @var Chapter $chapter */
         foreach ($chapters as $chapter) {
-            $resource = new NavEPubResource($chapter);
+            $resource = new NavEpubResource($chapter);
             $resource->setDepth($depth);
             $resource->setRelativePath($resource_relative_path);
             $this->result->add($resource);
@@ -191,20 +163,31 @@ class EPubResourceProcessor
         }
     }
 
-    private function mergeSpineWithResources(SpineEPubResource $spine, Dom &$dom)
+    private function getPublicUrl($filename) {
+        $base_path = $this->options[self::OPTION_RESOURCE_PUBLIC_PATH] . '/';
+        return $base_path . $filename;
+    }
+
+    private function setResourceIsUsed($resource_type, $path) {
+        $resource = $this->result->find($resource_type, $path);
+        if ($resource !== null) {
+            $resource->setIsUsed();
+            return $resource;
+        }
+        return false;
+    }
+
+    private function mergeSpineWithResources(SpineEpubResource $spine, Dom &$dom)
     {
         // Images
         $used_img = $dom->find('@img');
         /** @var simple_html_dom_node $img */
         foreach ($used_img as $img) {
             $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $img->getAttribute('src'));
-            $resource = $this->result->find(ImageEPubResource::TYPE, $compared_path);
-            if ($resource !== null) {
-                /* @var ImageEPubResource $resource */
-                $resource->setIsUsed();
-                $base_path = $this->options[self::OPTION_RESOURCE_PUBLIC_PATH] . '/';
-                // update with the real path to published resource
-                $img->setAttribute('src', $base_path . $resource->getFilename());
+            $css_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
+            if ($css_resource !== false) {
+                /* @var ImageEpubResource $css_resource */
+                $img->setAttribute('src', $this->getPublicUrl($css_resource->getFilename()));
             }
         }
 
@@ -220,21 +203,32 @@ class EPubResourceProcessor
         foreach ($used_css as $css) {
             if ($css->tag === 'link') {
                 $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $css->href);
-                $resource = $this->result->find(CssEPubResource::TYPE, $compared_path);
-                if ($resource !== null) {
-                    /* @var CssEPubResource $resource */
-                    $resource->setIsUsed();
-                    $resource->addNamespace($css_namespace);
+                $css_resource = $this->setResourceIsUsed(CssEpubResource::TYPE, $compared_path);
+                if ($css_resource !== false) {
+                    /* @var CssEpubResource $css_resource */
+                    $css_resource->addNamespace($css_namespace);
+                    $css_resource->run(function ($parsedCss) use ($spine) {
+                        /** @var Css $parsedCss */
+                        /** @var URL $value */
+                        foreach ($parsedCss->getAllUrlValues() as &$value) {
+                            $href = $value->getURL()->getString();
+                            $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
+                            $img_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
+                            if ($img_resource !== false) {
+                                $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
+                            }
+                        }
+                    });
                 }
             } else {
                 $manifest = new ManifestItem();
                 $manifest->href = "@inline:{$spine->getOrder()}";
                 $manifest->setContent($css->innertext);
 
-                $resource = new CssEPubResource($manifest, $this->options[self::OPTION_STYLE_SIZE_LIMIT]);
-                $resource->setIsUsed();
-                $resource->addNamespace($css_namespace);
-                $this->result->add($resource);
+                $css_resource = new CssEpubResource($manifest, $this->options[self::OPTION_STYLE_SIZE_LIMIT]);
+                $css_resource->setIsUsed();
+                $css_resource->addNamespace($css_namespace);
+                $this->result->add($css_resource);
             }
             $css->outertext = '';
         }
@@ -253,33 +247,30 @@ class EPubResourceProcessor
 
         $stop = false;
         // Sync resources with spines
-        /** @var SpineEPubResource $spine */
-        foreach ($this->result->getAll(SpineEPubResource::TYPE) as $spine) {
+        /** @var SpineEpubResource $spine */
+        foreach ($this->result->getAll(SpineEpubResource::TYPE) as $spine) {
             if (!$spine->isValid()) {
                 continue;
             }
-            // 1. Get DOM
-            $dom = $spine->getDom();
-            // 2. Set is_used flag
-            $spine->setIsUsed();
-            // 3. Truncate (if needed)
-            if ($this->use_truncate) {
-                $remain_length -= $spine->getLength();
-                if ($remain_length <= 0) {
-                    $stop = true;
-                    if ($remain_length < 0) {
-                        $dom->truncate($spine->getLength() + $remain_length);
+
+            $spine->run(function ($dom) use ($spine, &$remain_length, &$stop) {
+                // 1. Set is_used flag
+                $spine->setIsUsed();
+                // 2. Truncate (if needed)
+                if ($this->use_truncate) {
+                    $remain_length -= $spine->getLength();
+                    if ($remain_length <= 0) {
+                        $stop = true;
+                        if ($remain_length < 0) {
+                            $dom->truncate($spine->getLength() + $remain_length);
+                        }
                     }
                 }
-            }
-            // 4. Modify DOM with used resources
-            $this->mergeSpineWithResources($spine, $dom);
-            // 5. Clean up DOM (style, script)
-            $spine->cleanUp($this->options[self::OPTION_ALLOW_INLINE_STYLE]);
-            // 6. Save HTML content
-            $spine->flushContent();
-            // 7. Clear DOM
-            $spine->clearDom();
+                // 3. Modify DOM with used resources
+                $this->mergeSpineWithResources($spine, $dom);
+                // 4. Clean up DOM (style, script)
+                $dom->cleanUp($this->options[self::OPTION_ALLOW_INLINE_STYLE]);
+            });
 
             if ($stop) {
                 break;
@@ -287,12 +278,12 @@ class EPubResourceProcessor
         }
 
         // Sync navigators with spines
-        /** @var NavEPubResource $nav */
-        foreach ($this->result->getAll(NavEPubResource::TYPE) as $nav) {
-            /** @var SpineEPubResource $spine */
+        /** @var NavEpubResource $nav */
+        foreach ($this->result->getAll(NavEpubResource::TYPE) as $nav) {
+            /** @var SpineEpubResource $spine */
             $href = strstr($nav->getHref(), '#', true);
             $href = PathUtil::normalize($href === false ? $nav->getHref() : $href);
-            $spine = $this->result->get(SpineEPubResource::TYPE, $href);
+            $spine = $this->result->get(SpineEpubResource::TYPE, $href);
             if ($spine) {
                 $nav->setOrder($spine->getOrder());
                 $nav->setIsValid($spine->isValid());

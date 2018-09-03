@@ -1,19 +1,19 @@
 <?php declare(strict_types=1);
 
-namespace Ridibooks\Viewer\EPub;
+namespace Ridibooks\Viewer\Epub;
 
-use Ridibooks\Viewer\EPub\Resource\EPubResource;
+use Ridibooks\Viewer\Epub\Resource\EpubResource;
 
-class EPubResourceProcessResult
+class EpubResourceProcessResult
 {
     private $resources = [];
 
-    private function getKey(EPubResource $resource)
+    private function getKey(EpubResource $resource)
     {
         return PathUtil::normalize($resource->getHref());
     }
 
-    public function add(EPubResource $resource)
+    public function add(EpubResource $resource)
     {
         $type = $resource->getType();
         if (!isset($this->resources[$type])) {
@@ -31,7 +31,7 @@ class EPubResourceProcessResult
 
         if ($is_used_only) {
             $list = array_filter($this->resources[$type], function ($resource) {
-                /* @var EPubResource $resource */
+                /* @var EpubResource $resource */
                 return $resource->isUsed();
             });
             return $list;
