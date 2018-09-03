@@ -4,8 +4,7 @@
 namespace Ridibooks\Viewer\Epub\Exception;
 
 
-
-class EpubFileException extends EpubResourceException
+class EpubFileException extends \Exception
 {
 
 }
