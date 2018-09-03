@@ -207,18 +207,6 @@ class EpubResourceProcessor
                 if ($css_resource !== false) {
                     /* @var CssEpubResource $css_resource */
                     $css_resource->addNamespace($css_namespace);
-                    $css_resource->run(function ($parsedCss) use ($spine) {
-                        /** @var Css $parsedCss */
-                        /** @var URL $value */
-                        foreach ($parsedCss->getAllUrlValues() as &$value) {
-                            $href = $value->getURL()->getString();
-                            $compared_path = PathUtil::normalize(dirname($spine->getHref()) . '/' . $href);
-                            $img_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
-                            if ($img_resource !== false) {
-                                $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
-                            }
-                        }
-                    });
                 }
             } else {
                 $manifest = new ManifestItem();
@@ -289,6 +277,22 @@ class EpubResourceProcessor
                 $nav->setIsValid($spine->isValid());
                 $nav->setIsUsed($spine->isUsed());
             }
+        }
+
+        foreach ($this->result->getAll(CssEpubResource::TYPE) as $css) {
+            $css->run(function ($parsed_css) use ($css) {
+                /** @var CssEpubResource $css */
+                /** @var Css $parsed_css */
+                /** @var URL $value */
+                foreach ($parsed_css->getAllUrlValues() as &$value) {
+                    $href = $value->getURL()->getString();
+                    $compared_path = PathUtil::normalize(dirname($css->getHref()) . '/' . $href);
+                    $img_resource = $this->setResourceIsUsed(ImageEpubResource::TYPE, $compared_path);
+                    if ($img_resource !== false) {
+                        $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
+                    }
+                }
+            });
         }
 
         return $this->result;

@@ -103,7 +103,6 @@ class Css
             }
         }
 
-        $this->parsed->__toString();
         return $this;
     }
 
