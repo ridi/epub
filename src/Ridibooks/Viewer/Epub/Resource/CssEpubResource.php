@@ -10,7 +10,6 @@ class CssEpubResource extends EpubResource
 {
     const TYPE = 'css';
 
-    /** @var array 한 페이지에 여러 Spine이 충돌 없이 존재할 수 있도록 하기 위해 네임스페이스 관리 */
     private $namespaces = [];
     private $style_size_limit;
     private $content;
@@ -24,7 +23,7 @@ class CssEpubResource extends EpubResource
         $this->style_size_limit = $style_size_limit;
     }
 
-    private function getContentFromManifest()
+    private function getContentInternal()
     {
         if (!isset($this->content)) {
             $this->content = $this->manifest->getContent();
@@ -35,7 +34,7 @@ class CssEpubResource extends EpubResource
     private function getParsedCss()
     {
         if (!isset($this->parsed)) {
-            $content = $this->getContentFromManifest();
+            $content = $this->getContentInternal();
             if ($content === false) {
                 throw new \Exception('Cannot open css resource: ' . $this->getHref());
             }
@@ -60,6 +59,11 @@ class CssEpubResource extends EpubResource
         $this->namespaces[] = $namespace;
     }
 
+    public function getNamespaces()
+    {
+        return $this->namespaces;
+    }
+
     /**
      * @param callable $run_with_parsed
      * @throws \Exception
@@ -72,18 +76,9 @@ class CssEpubResource extends EpubResource
 
     /**
      * @return string
-     * @throws CssResourceException
      */
     public function getContent()
     {
-        try {
-            return $this->getParsedCss()
-                ->cleanUp($this->namespaces)
-                ->getContent(true);
-        } catch (\Exception $e) {
-            throw new CssResourceException($e->getMessage());
-        } finally {
-            $this->flushParsedCss();
-        }
+        return Css::minify($this->getContentInternal());
     }
 }

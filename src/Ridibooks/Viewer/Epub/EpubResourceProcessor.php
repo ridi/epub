@@ -279,7 +279,7 @@ class EpubResourceProcessor
             }
         }
 
-        foreach ($this->result->getAll(CssEpubResource::TYPE) as $css) {
+        foreach ($this->result->getAll(CssEpubResource::TYPE, true) as $css) {
             $css->run(function ($parsed_css) use ($css) {
                 /** @var CssEpubResource $css */
                 /** @var Css $parsed_css */
@@ -292,6 +292,7 @@ class EpubResourceProcessor
                         $value->setURL(new CSSString($this->getPublicUrl($img_resource->getFilename())));
                     }
                 }
+                $parsed_css->cleanUp($css->getNamespaces());
             });
         }
 
