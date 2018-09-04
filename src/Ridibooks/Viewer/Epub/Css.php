@@ -27,6 +27,15 @@ class Css
     }
 
     /**
+     * @param string $content
+     * @return string
+     */
+    public static function minify($content)
+    {
+        return \CssMin::minify($content);
+    }
+
+    /**
      * Css constructor.
      *
      * @param string $css
@@ -103,25 +112,19 @@ class Css
             }
         }
 
-        $this->parsed->__toString();
         return $this;
     }
 
     /**
-     * @param bool $minify
-     * @return string
+     * @return array
      */
-    public function getContent($minify = false)
-    {
-        $content = $this->parsed->__toString();
-        if ($minify) {
-            return \CssMin::minify($content);
-        }
-        return $content;
-    }
-
     public function getAllUrlValues()
     {
         return array_filter($this->parsed->getAllValues(), function ($value) { return $value instanceof URL; });
+    }
+
+    public function getContent()
+    {
+        return $this->parsed->__toString();
     }
 }
