@@ -1,0 +1,1 @@
+<?php return '#ridi_c1 .sybookChapter3291{font-family:援대┝;font-style:normal;font-weight:bold;font-size:2em;margin:0pt;padding:0pt;text-align:center}#ridi_c1 .sybookContents3291{font-family:援대┝;font-style:normal;font-weight:normal;font-size:1em;margin:0pt;padding:0pt;line-height:200%}';

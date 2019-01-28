@@ -76,7 +76,7 @@ class OpfResource
 
         // Epub version:
         $package->version = (string) $xml['version'];
-        
+
         $this->processMetadataElement($xml->metadata, $package->metadata);
         $this->processManifestElement($xml->manifest, $package->manifest);
         $this->processSpineElement($xml->spine, $package->spine, $package->manifest, $package->navigation);
@@ -157,9 +157,9 @@ class OpfResource
 
             $position++;
         }
-        
+
         $ncxId = ($xml['toc']) ? (string) $xml['toc'] : 'ncx';
-        
+
         if ($manifest->has($ncxId)) {
             $navigation->src = $manifest->get($ncxId);
         }

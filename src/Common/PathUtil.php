@@ -1,7 +1,7 @@
 <?php declare(strict_types=1);
 
 
-namespace Ridibooks\Viewer\Epub;
+namespace Common;
 
 
 class PathUtil
@@ -16,9 +16,10 @@ class PathUtil
      * @see https://gist.github.com/thsutton/772287
      * @see http://php.net/manual/en/function.empty.php#refsect1-function.empty-returnvalues
      * @param $path
+     * @param $safe_url
      * @return string
      */
-    public static function normalize(string $path): string
+    public static function normalize(string $path, bool $safe_url = true): string
     {
         // Process the components
         $parts = explode('/', $path);
@@ -32,7 +33,7 @@ class PathUtil
                 array_pop($safe);
                 continue;
             } else {
-                $safe[] = urlencode(urldecode($part));
+                $safe[] = $safe_url ? urlencode(urldecode($part)) : $part;
             }
         }
         // Return the "clean" path

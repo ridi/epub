@@ -7,6 +7,7 @@ use ePub\Definition\ManifestItem;
 use ePub\Definition\Package;
 use ePub\Definition\SpineItem;
 use ePub\Reader;
+use Common\PathUtil;
 use Ridibooks\Viewer\Epub\Exception\EpubFileException;
 use Ridibooks\Viewer\Epub\Exception\EpubResourceException;
 use Ridibooks\Viewer\Epub\Resource\CssEpubResource;
