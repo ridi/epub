@@ -11,6 +11,7 @@
 
 namespace ePub\Resource;
 
+use Common\PathUtil;
 use ZipArchive;
 
 class ZipFileResource
@@ -34,7 +35,7 @@ class ZipFileResource
     public function get($name)
     {
         if (null !== $this->cwd) {
-            $name = $this->cwd . '/' . $name;
+            $name = PathUtil::normalize($this->cwd . '/' . $name, false);
         }
 
         $string = $this->zipFile->getFromName($name);

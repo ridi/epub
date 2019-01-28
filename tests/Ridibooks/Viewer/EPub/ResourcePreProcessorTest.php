@@ -257,4 +257,20 @@ class ResourcePreProcessorTest extends TestCase
             $this->assertContains($image_filenames['Images/background.jpg'], $content);
         }
     }
+
+    public function testRelativeResourceUrl()
+    {
+        $epub = $this->loadResource('resource_in_relative_path.epub');
+
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
+        ]);
+        $result = $resource_manager->run();
+
+        foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
+            $content = $css->getContent();
+            var_dump($content);
+            $this->assertMatchesSnapshot($content);
+        }
+    }
 }

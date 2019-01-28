@@ -2,6 +2,7 @@
 
 namespace Ridibooks\Viewer\Epub;
 
+use Common\PathUtil;
 use Ridibooks\Viewer\Epub\Resource\EpubResource;
 
 class EpubResourceProcessResult

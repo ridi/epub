@@ -4,7 +4,6 @@ namespace Ridibooks\Viewer\Epub\Resource;
 
 use ePub\Definition\ManifestItem;
 use Ridibooks\Viewer\Epub\Css;
-use Ridibooks\Viewer\Epub\Exception\CssResourceException;
 
 class CssEpubResource extends EpubResource
 {
