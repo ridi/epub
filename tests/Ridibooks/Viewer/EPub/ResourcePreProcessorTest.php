@@ -78,12 +78,12 @@ class ResourcePreProcessorTest extends TestCase
         }
     }
 
-    public function testTruncateOption()
+    public function testTruncateInPercentOption()
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
         $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
-            EpubResourceProcessor::OPTION_TRUNCATE => 5,
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_PERCENT => 5,
         ]);
 
         $result = $resource_manager->run();
@@ -94,12 +94,27 @@ class ResourcePreProcessorTest extends TestCase
         $this->assertEquals(9, count($result->getAll(ImageEpubResource::TYPE, true)));
     }
 
+    public function testTruncateInLengthOption()
+    {
+        $epub = $this->loadResource('multiple_spines.epub');
+
+        $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_LENGTH => 20767,
+        ]);
+
+        $result = $resource_manager->run();
+
+        foreach ($result->getAll(SpineEpubResource::TYPE, true) as $spine) {
+            $this->assertMatchesSnapshot($spine->getContent());
+        }
+    }
+
     public function testIncludeCssOption()
     {
         $epub = $this->loadResource('multiple_spines.epub');
 
         $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
-            EpubResourceProcessor::OPTION_TRUNCATE => 10,
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_PERCENT => 10,
             EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
             EpubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
         ]);
@@ -115,7 +130,7 @@ class ResourcePreProcessorTest extends TestCase
         $epub = $this->loadResource('multiple_spines.epub');
 
         $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
-            EpubResourceProcessor::OPTION_TRUNCATE => 0.5,
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_PERCENT => 0.5,
             EpubResourceProcessor::OPTION_RESOURCE_PUBLIC_PATH => '/prefix',
         ]);
         $result = $resource_manager->run();
@@ -130,7 +145,7 @@ class ResourcePreProcessorTest extends TestCase
         $epub = $this->loadResource('multiple_spines.epub');
 
         $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
-            EpubResourceProcessor::OPTION_TRUNCATE => 0.5,
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_PERCENT => 0.5,
             EpubResourceProcessor::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => true,
             EpubResourceProcessor::OPTION_ALLOW_INTERNAL_STYLE_SHEET => true,
             EpubResourceProcessor::OPTION_CSS_NAMESPACE_PREFIX => '.test_class_c',
@@ -204,7 +219,7 @@ class ResourcePreProcessorTest extends TestCase
 
         $resource_manager = EpubResourceProcessor::createFromEPub($epub, [
             EpubResourceProcessor::OPTION_INCLUDE_NAV => true,
-            EpubResourceProcessor::OPTION_TRUNCATE => 10,
+            EpubResourceProcessor::OPTION_TRUNCATE_IN_PERCENT => 10,
         ]);
         $result = $resource_manager->run();
 
@@ -269,7 +284,6 @@ class ResourcePreProcessorTest extends TestCase
 
         foreach ($result->getAll(CssEpubResource::TYPE, true) as $css) {
             $content = $css->getContent();
-            var_dump($content);
             $this->assertMatchesSnapshot($content);
         }
     }

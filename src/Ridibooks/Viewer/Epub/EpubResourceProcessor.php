@@ -20,8 +20,8 @@ use simplehtmldom_1_5\simple_html_dom_node;
 
 class EpubResourceProcessor
 {
-    const OPTION_TRUNCATE = 'truncate';
-    const OPTION_TRUNCATE_MAX_LENGTH = 'truncate_max_length';
+    const OPTION_TRUNCATE_IN_PERCENT = 'truncate_in_percent';
+    const OPTION_TRUNCATE_IN_LENGTH = 'truncate_in_length';
     const OPTION_ALLOW_EXTERNAL_STYLE_SHEET = 'include_external_style_sheet';
     const OPTION_ALLOW_INTERNAL_STYLE_SHEET = 'include_internal_style_sheet';
     const OPTION_ALLOW_INLINE_STYLE = 'include_inline_style';
@@ -41,8 +41,8 @@ class EpubResourceProcessor
     {
         $this->epub = $epub;
         $this->options = array_merge([
-            self::OPTION_TRUNCATE => -1,
-            self::OPTION_TRUNCATE_MAX_LENGTH => 50000,
+            self::OPTION_TRUNCATE_IN_PERCENT => null,
+            self::OPTION_TRUNCATE_IN_LENGTH => null,
             self::OPTION_ALLOW_EXTERNAL_STYLE_SHEET => false,
             self::OPTION_ALLOW_INTERNAL_STYLE_SHEET => false,
             self::OPTION_ALLOW_INLINE_STYLE => false,
@@ -116,9 +116,13 @@ class EpubResourceProcessor
     {
         $spines = $this->epub->getSpine()->all();
 
-        $truncate_percentage = $this->options[self::OPTION_TRUNCATE];
-        $truncate_max_length = $this->options[self::OPTION_TRUNCATE_MAX_LENGTH];
-        $this->use_truncate = $truncate_percentage > -1 && $truncate_percentage < 100;
+        $truncate_in_percentage = $this->options[self::OPTION_TRUNCATE_IN_PERCENT];
+        $truncate_in_length = $this->options[self::OPTION_TRUNCATE_IN_LENGTH];
+
+        $use_percentage_truncate = isset($truncate_in_percentage) && $truncate_in_percentage > 0 && $truncate_in_percentage < 100;
+        $use_length_truncate = isset($truncate_in_length) && $truncate_in_length > 0;
+        $this->use_truncate = $use_percentage_truncate || $use_length_truncate;
+
         $total_length = 0;
 
         $last_spine = end($spines);
@@ -132,13 +136,16 @@ class EpubResourceProcessor
             // Validation
             $spine->setIsValid($validator === null || $validator($manifest, $manifest == $last_spine));
 
-            if ($this->use_truncate) {
+            if ($use_percentage_truncate) {
                 $total_length += $spine->getLength();
             }
             $this->result->add($spine);
         }
-        if ($this->use_truncate) {
-            $this->allowed_length = min((int)($total_length * $truncate_percentage * 0.01), $truncate_max_length);
+
+        if ($use_percentage_truncate) {
+            $this->allowed_length = (int)($total_length * $truncate_in_percentage * 0.01);
+        } elseif ($use_length_truncate) {
+            $this->allowed_length = $truncate_in_length;
         }
     }
 
@@ -242,18 +249,22 @@ class EpubResourceProcessor
                 continue;
             }
 
-            $spine->run(function ($dom) use ($spine, &$remain_length, &$stop) {
+            $spine_length = 0;
+            if ($this->use_truncate) {
+                $spine_length = $spine->getLength();
+            }
+            $spine->run(function ($dom) use ($spine, $spine_length, &$remain_length, &$stop) {
                 // 1. Set is_used flag
                 $spine->setIsUsed();
                 // 2. Truncate (if needed)
                 if ($this->use_truncate) {
-                    $remain_length -= $spine->getLength();
-                    if ($remain_length <= 0) {
-                        $stop = true;
-                        if ($remain_length < 0) {
-                            $dom->truncate($spine->getLength() + $remain_length);
+                    if ($remain_length - $spine_length <= 0) {
+                        if ($remain_length - $spine_length < 0) {
+                            $dom->truncate($remain_length);
                         }
+                        $stop = true;
                     }
+                    $remain_length -= $spine_length;
                 }
                 // 3. Modify DOM with used resources
                 $this->mergeSpineWithResources($spine, $dom);
